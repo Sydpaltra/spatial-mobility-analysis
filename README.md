@@ -17,5 +17,6 @@ The goal of this repository is to analyse mobility data collected between 2020 a
 	- 2) Percentage change of the out-of-home duration compared to before the outbreak of COVID-19, 
 	- 3) A time series boxplot depicting the variance across counties, for each federal state a panel is created
 
+- **AnalysisByWave.R** : ToDo
 
 ## Directories
