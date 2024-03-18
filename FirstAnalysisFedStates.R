@@ -69,8 +69,29 @@ for(timeScale in timeScales){
         xlab("Date") +
         ylab("Average Time/Person [hrs]") +
         scale_x_date(date_breaks = "3 month", date_labels = "%m/%y")
-
         ggsave(paste0("FedStates", nameTimeScale, "until", dateRange, "-BoxPlots.pdf"), dpi = 500, w = 36, h = 12)
         ggsave(paste0("FedStates", nameTimeScale, "until", dateRange, "-BoxPlots.png"), dpi = 500, w = 36, h = 12)
+
+        aLaender <- c("Rheinland-Pfalz", "Niedersachsen", "Bremen", "Berlin", "Brandenburg", "Hamburg", "Mecklenburg-Vorpommern")
+        bLaender <- c("Bayern", "Hessen", "Nordrhein-Westfalen", "Schleswig-Holstein", "Sachsen-Anhalt", "Sachsen", "Saarland")
+        FedStates <- FedStates %>% mutate(SPDCDU = case_when(BundeslandID %in% aLaender ~ "SPD", 
+                                                             BundeslandID %in% bLaender ~ "CDU",
+                                                             .default = "neither"))
+        ggplot(FedStates %>% filter(BundeslandID != "Deutschland") %>% filter(date < dateRange)) +
+        geom_boxplot(aes(x = date, y = outOfHomeDuration, group = date), size = 3) +
+        theme_minimal() +
+        facet_wrap(~SPDCDU, nrow = 3) +
+        theme(legend.position = "bottom", legend.title = element_blank()) +
+        theme(text = element_text(size = 30)) +
+        theme(axis.ticks.x = element_line(),
+                axis.ticks.y = element_line(),
+                axis.ticks.length = unit(5, "pt")) +
+        scale_color_manual(values = getPalette(colourCount)) +
+        xlab("Date") +
+        ylab("Average Time/Person [hrs]") +
+        scale_x_date(date_breaks = "3 month", date_labels = "%m/%y")
+        ggsave(paste0("FedStates", nameTimeScale, "until", dateRange, "-BoxPlotsSPDCDU.pdf"), dpi = 700, w = 36, h = 20)
+        ggsave(paste0("FedStates", nameTimeScale, "until", dateRange, "-BoxPlotsSPDCDU.png"), dpi = 700, w = 36, h = 20)
+
     }
 }
