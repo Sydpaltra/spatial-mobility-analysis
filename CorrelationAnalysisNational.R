@@ -119,6 +119,26 @@ RKIIncidence <- RKIIncidence %>% mutate(wave = case_when(Meldedatum < "2020-05-1
                                                             Meldedatum < "2020-09-20" ~ "Summer break",
                                                             .default = "winter 20/21"))
 
+# Reading in + prepating school vacation data
+SchoolVac <- read_csv("/Users/sydney/git/spatial-mobility-analysis/data/school_vacations/school_vacations_weekly_nat.csv")
+colnames(SchoolVac)[1] <- "Meldedatum"
+
+RKIIncidence <- left_join(RKIIncidence, SchoolVac)
+RKIIncidence <- RKIIncidence %>% mutate(leadSchoolVac = lead(schoolVacation)) %>%
+                                mutate(leadSchoolVac2 = lead(schoolVacation, 2)) %>%
+                                mutate(leadSchoolVac3 = lead(schoolVacation, 3)) %>%
+                                mutate(leadSchoolVac4 = lead(schoolVacation, 4))
+
+# Reading in + preparing public holiday
+PublicHol <- read_csv("/Users/sydney/git/spatial-mobility-analysis/data/public_holiday/public_holidays_weekly_nat.csv")
+colnames(PublicHol)[1] <- "Meldedatum"
+
+RKIIncidence <- left_join(RKIIncidence, PublicHol)
+RKIIncidence <- RKIIncidence %>% mutate(leadpubHoliday = lead(pubHoliday)) %>%
+                                mutate(leadpubHoliday2 = lead(pubHoliday, 2)) %>%
+                                mutate(leadpubHoliday3 = lead(pubHoliday, 3)) %>%
+                                mutate(leadpubHoliday4 = lead(pubHoliday, 4))
+
 # Out Of Home Duration vs approximation of R-value
 pR <- ggplot(data = RKIIncidence) +
 geom_point(aes(x = approxR, y = outOfHomeDuration, colour = wave), size = 2.5) +
@@ -237,6 +257,7 @@ cor_df[nrow(cor_df) + 1, ] <- c("Temp", cor(RKIIncidence$leadTmax2, RKIIncidence
 cor_df[nrow(cor_df) + 1, ] <- c("Temp", cor(RKIIncidence$leadTmax3, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 3)
 cor_df[nrow(cor_df) + 1, ] <- c("Temp", cor(RKIIncidence$leadTmax4, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 4)
 
+# Out of home duration vs. Precipitation
 pPrcp <- ggplot(data = RKIIncidence) +
 geom_point(aes(x = prcp, y = outOfHomeDuration, color = wave), size = 2.5) +
 theme_minimal() +
@@ -252,9 +273,41 @@ cor_df[nrow(cor_df) + 1, ] <- c("Prcp", cor(RKIIncidence$leadPrcp2, RKIIncidence
 cor_df[nrow(cor_df) + 1, ] <- c("Prcp", cor(RKIIncidence$leadPrcp3, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 3)
 cor_df[nrow(cor_df) + 1, ] <- c("Prcp", cor(RKIIncidence$leadPrcp4, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 4)
 
+# Out-of-home duration vs. School vacation
+pSchool <- ggplot(data = RKIIncidence) +
+geom_point(aes(x = schoolVacation, y = outOfHomeDuration, color = wave), size = 2.5) +
+theme_minimal() +
+theme(text = element_text(size = 25), legend.position = "bottom", legend.title = element_blank()) +
+theme(axis.ticks.x = element_line(),
+                axis.ticks.y = element_line(),
+                axis.ticks.length = unit(5, "pt")) +
+ylab("outOfHomeDuration") +
+xlab("School Vacation")
+cor_df[nrow(cor_df) + 1, ] <- c("SchoolVac", cor(RKIIncidence$schoolVacation, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 0)
+cor_df[nrow(cor_df) + 1, ] <- c("SchoolVac", cor(RKIIncidence$leadSchoolVac, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 1)
+cor_df[nrow(cor_df) + 1, ] <- c("SchoolVac", cor(RKIIncidence$leadSchoolVac2, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 2)
+cor_df[nrow(cor_df) + 1, ] <- c("SchoolVac", cor(RKIIncidence$leadSchoolVac3, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 3)
+cor_df[nrow(cor_df) + 1, ] <- c("SchoolVac", cor(RKIIncidence$leadSchoolVac4, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 4)
 
-PlotCorrelations <- arrangeGrob(pR, pInc, plogInc, pHos, pICU, pD, pTemp, pPrcp, nrow = 4)
-ggsave("CorrelationPlotNat.pdf", PlotCorrelations, dpi = 500, w = 17, h = 18)
-ggsave("CorrelationPlotNat.png", PlotCorrelations, dpi = 500, w = 15, h = 18)
+# Out-of-home duration vs. public holidays
+pPub <- ggplot(data = RKIIncidence) +
+geom_point(aes(x = pubHoliday, y = outOfHomeDuration, color = wave), size = 2.5) +
+theme_minimal() +
+theme(text = element_text(size = 25), legend.position = "bottom", legend.title = element_blank()) +
+theme(axis.ticks.x = element_line(),
+                axis.ticks.y = element_line(),
+                axis.ticks.length = unit(5, "pt")) +
+ylab("outOfHomeDuration") +
+xlab("Public Holiday")
+cor_df[nrow(cor_df) + 1, ] <- c("PublicHol", cor(RKIIncidence$pubHoliday, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 0)
+cor_df[nrow(cor_df) + 1, ] <- c("PublicHol", cor(RKIIncidence$leadpubHoliday, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 1)
+cor_df[nrow(cor_df) + 1, ] <- c("PublicHol", cor(RKIIncidence$leadpubHoliday2, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 2)
+cor_df[nrow(cor_df) + 1, ] <- c("PublicHol", cor(RKIIncidence$leadpubHoliday3, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 3)
+cor_df[nrow(cor_df) + 1, ] <- c("PublicHol", cor(RKIIncidence$leadpubHoliday4, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 4)
+
+
+PlotCorrelations <- arrangeGrob(pR, pInc, plogInc, pHos, pICU, pD, pTemp, pPrcp, pSchool, pPub, nrow = 5)
+ggsave("CorrelationPlotNat.pdf", PlotCorrelations, dpi = 500, w = 17, h = 22)
+ggsave("CorrelationPlotNat.png", PlotCorrelations, dpi = 500, w = 17, h = 22)
 
 
