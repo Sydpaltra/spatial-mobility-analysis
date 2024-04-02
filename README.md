@@ -13,8 +13,10 @@ The goal of this repository is to analyse mobility data collected between 2020 a
 	4. Out-of-home duration vs. Hositalization incidence
 	5. Out-of-home duration vs. ICU Cases/100000
 	6. Out-of-home duration vs. Deaths incidence
-	7. Out-of-home duration vs. Maximum temperature
-	8. Out-of-home duration vs. Precipitation (in mm)
+	7. Out-of-home duration vs. Maximum temperature (population-weighted average across fed. states)
+	8. Out-of-home duration vs. Precipitation (in mm, population-weighted average across fed. states)
+	9. Out-of-home duration vs. School holidays (population-weighted average across fed. states)
+	10. Out-of-home duration vs. Public holidays (population-weighted average across fed. states)
 
 - **FirstAnalysisFedStates.R** : Data is considered on a weekly/weekend only/weekday only level. Analysis is conducted until a) 2021-01-01 and b) 2023-01-01. Necessary mobility is read in,  4 plots are produced: 
 	1. Absolute out-of-home duration over time, 
