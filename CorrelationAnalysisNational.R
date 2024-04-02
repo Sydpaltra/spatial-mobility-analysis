@@ -53,6 +53,22 @@ RKIIncidence <- RKIIncidence %>% mutate(leadHospitals = lead(RKIIncidence$`7T_Ho
                                 mutate(leadHospitals3 = lead(RKIIncidence$`7T_Hospitalisierung_Inzidenz`, 3)) %>%
                                 mutate(leadHospitals4 = lead(RKIIncidence$`7T_Hospitalisierung_Inzidenz`, 4))
 
+# Reading in + prepating ICU data
+RKIICU <- read_csv("https://raw.githubusercontent.com/robert-koch-institut/Intensivkapazitaeten_und_COVID-19-Intensivbettenbelegung_in_Deutschland/main/Intensivregister_Deutschland_Kapazitaeten.csv")
+RKIICU <- RKIICU %>% filter(behandlungsgruppe == "Erwachsene") %>% 
+                    mutate(year = year(datum)) %>%
+                    mutate(week = isoweek(datum)) %>% 
+                    filter(datum < "2023-01-01")
+RKIICU <- RKIICU %>% group_by(year, week) %>% summarise(datum = max(datum), ICUFaelle = sum(faelle_covid_aktuell), ICUIncidence = ICUFaelle/83200000*100000) %>% 
+                    ungroup()
+
+RKIIncidence <- left_join(RKIIncidence, RKIICU)
+
+RKIIncidence <- RKIIncidence %>% mutate(leadICU= lead(RKIIncidence$ICUIncidence)) %>%
+                                mutate(leadICU2 = lead(RKIIncidence$ICUIncidence, 2)) %>%
+                                mutate(leadICU3 = lead(RKIIncidence$ICUIncidence, 3)) %>%
+                                mutate(leadICU4 = lead(RKIIncidence$ICUIncidence, 4))
+
 # Reading in + preparing data on deaths
 RKIDeaths <- read_csv("https://raw.githubusercontent.com/robert-koch-institut/COVID-19-Todesfaelle_in_Deutschland/main/COVID-19-Todesfaelle_Deutschland.csv")
 RKIDeaths <- RKIDeaths %>% filter(Berichtsdatum < "2023-01-01") %>%
@@ -91,6 +107,10 @@ RKIIncidence <- RKIIncidence %>% mutate(leadTmax = lead(tmax)) %>%
                                 mutate(leadTmax2 = lead(tmax, 2)) %>%
                                 mutate(leadTmax3 = lead(tmax, 3)) %>%
                                 mutate(leadTmax4 = lead(tmax, 4))
+RKIIncidence <- RKIIncidence %>% mutate(leadPrcp = lead(prcp)) %>%
+                                mutate(leadPrcp2 = lead(prcp, 2)) %>%
+                                mutate(leadPrcp3 = lead(prcp, 3)) %>%
+                                mutate(leadPrcp4 = lead(prcp, 4))
 
 RKIIncidence <- RKIIncidence %>% filter(Meldedatum > "2020-03-15") %>%
                                     filter(Meldedatum < "2021-01-01")
@@ -101,7 +121,7 @@ RKIIncidence <- RKIIncidence %>% mutate(wave = case_when(Meldedatum < "2020-05-1
 
 # Out Of Home Duration vs approximation of R-value
 pR <- ggplot(data = RKIIncidence) +
-geom_point(aes(x = leadR4, y = outOfHomeDuration, colour = wave), size = 2.5) +
+geom_point(aes(x = approxR, y = outOfHomeDuration, colour = wave), size = 2.5) +
 theme_minimal() +
 theme(text = element_text(size = 25), legend.position = "bottom", legend.title = element_blank()) +
 theme(axis.ticks.x = element_line(),
@@ -120,7 +140,7 @@ cor_df[nrow(cor_df) + 1, ] <- c("R", cor(RKIIncidence$leadR4, RKIIncidence$outOf
 
 # Out Of Home Duration vs Incidence
 pInc <- ggplot(data = RKIIncidence) +
-geom_point(aes(x = leadIncidence4, y = outOfHomeDuration, colour = wave), size = 2.5) +
+geom_point(aes(x = `Inzidenz_7-Tage`, y = outOfHomeDuration, colour = wave), size = 2.5) +
 theme_minimal() +
 theme(text = element_text(size = 25), legend.position = "bottom", legend.title = element_blank()) +
 theme(axis.ticks.x = element_line(),
@@ -136,7 +156,7 @@ cor_df[nrow(cor_df) + 1, ] <- c("Incidence", cor(RKIIncidence$leadIncidence4, RK
 
 # Out Of Home Duration vs log(Incidence)
 plogInc <- ggplot(data = RKIIncidence) +
-geom_point(aes(x = logInclead4, y = outOfHomeDuration, colour = wave), size = 2.5) +
+geom_point(aes(x = logInc, y = outOfHomeDuration, colour = wave), size = 2.5) +
 theme_minimal() +
 theme(text = element_text(size = 25), legend.position = "bottom", legend.title = element_blank()) +
 theme(axis.ticks.x = element_line(),
@@ -153,7 +173,7 @@ cor_df[nrow(cor_df) + 1, ] <- c("logIncidence", cor(RKIIncidence$logInclead4, RK
 
 # Out Of Home Duration vs Hospital incidence
 pHos <- ggplot(data = RKIIncidence) +
-geom_point(aes(x = leadHospitals4, y = outOfHomeDuration, colour = wave), size = 2.5) +
+geom_point(aes(x = `7T_Hospitalisierung_Inzidenz`, y = outOfHomeDuration, colour = wave), size = 2.5) +
 theme_minimal() +
 theme(text = element_text(size = 25), legend.position = "bottom", legend.title = element_blank()) +
 theme(axis.ticks.x = element_line(),
@@ -167,9 +187,27 @@ cor_df[nrow(cor_df) + 1, ] <- c("HospitalIncidence", cor(RKIIncidence$leadHospit
 cor_df[nrow(cor_df) + 1, ] <- c("HospitalIncidence", cor(RKIIncidence$leadHospitals3, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 3)
 cor_df[nrow(cor_df) + 1, ] <- c("HospitalIncidence", cor(RKIIncidence$leadHospitals4, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 4)
 
+# Out Of Home Duration vs Hospital incidence
+pICU <- ggplot(data = RKIIncidence) +
+geom_point(aes(x = ICUIncidence, y = outOfHomeDuration, colour = wave), size = 2.5) +
+theme_minimal() +
+theme(text = element_text(size = 25), legend.position = "bottom", legend.title = element_blank()) +
+theme(axis.ticks.x = element_line(),
+                axis.ticks.y = element_line(),
+                axis.ticks.length = unit(5, "pt")) +
+#labs(caption="Careful: ICU is given in cases/100,000 NOT in new(!) cases/100,000") +
+ylab("outOfHomeDuration") +
+xlab("ICU Belegung(!)/100.000")
+cor_df[nrow(cor_df) + 1, ] <- c("ICUIncidence", cor(RKIIncidence$ICUIncidence, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 0)
+cor_df[nrow(cor_df) + 1, ] <- c("ICUIncidence", cor(RKIIncidence$leadICU, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 1)
+cor_df[nrow(cor_df) + 1, ] <- c("ICUIncidence", cor(RKIIncidence$leadICU2, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 2)
+cor_df[nrow(cor_df) + 1, ] <- c("ICUIncidence", cor(RKIIncidence$leadICU3, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 3)
+cor_df[nrow(cor_df) + 1, ] <- c("ICUIncidence", cor(RKIIncidence$leadICU4, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 4)
+
+
 # Out Of Home Duration vs Death incidence
 pD <- ggplot(data = RKIIncidence) +
-geom_point(aes(x = leadDeaths4, y = outOfHomeDuration, colour = wave), size = 2.5) +
+geom_point(aes(x = DeathsIncidence, y = outOfHomeDuration, colour = wave), size = 2.5) +
 theme_minimal() +
 theme(text = element_text(size = 25), legend.position = "bottom", legend.title = element_blank()) +
 theme(axis.ticks.x = element_line(),
@@ -184,21 +222,39 @@ cor_df[nrow(cor_df) + 1, ] <- c("DeathIncidence", cor(RKIIncidence$leadDeaths3, 
 cor_df[nrow(cor_df) + 1, ] <- c("DeathIncidence", cor(RKIIncidence$leadDeaths4, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 4)
 
 # Out Of Home Duration vs maximum Temp
-pWeath <- ggplot(data = RKIIncidence) +
-geom_point(aes(x = leadTmax4, y = outOfHomeDuration, color = wave), size = 2.5) +
+pTemp <- ggplot(data = RKIIncidence) +
+geom_point(aes(x = tmax, y = outOfHomeDuration, color = wave), size = 2.5) +
 theme_minimal() +
 theme(text = element_text(size = 25), legend.position = "bottom", legend.title = element_blank()) +
 theme(axis.ticks.x = element_line(),
                 axis.ticks.y = element_line(),
                 axis.ticks.length = unit(5, "pt")) +
 ylab("outOfHomeDuration") +
-xlab("Tmax")
+xlab("Tmax [C°]")
 cor_df[nrow(cor_df) + 1, ] <- c("Temp", cor(RKIIncidence$tmax, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 0)
 cor_df[nrow(cor_df) + 1, ] <- c("Temp", cor(RKIIncidence$leadTmax, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 1)
 cor_df[nrow(cor_df) + 1, ] <- c("Temp", cor(RKIIncidence$leadTmax2, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 2)
 cor_df[nrow(cor_df) + 1, ] <- c("Temp", cor(RKIIncidence$leadTmax3, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 3)
 cor_df[nrow(cor_df) + 1, ] <- c("Temp", cor(RKIIncidence$leadTmax4, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 4)
 
-PlotCorrelations <- arrangeGrob(pR, pInc, plogInc, pHos, pD, pWeath, nrow = 3)
-ggsave("CorrelationPlotNat4weeklead.pdf", PlotCorrelations, dpi = 500, w = 15, h = 18)
-ggsave("CorrelationPlotNat4weeklead.png", PlotCorrelations, dpi = 500, w = 15, h = 18)
+pPrcp <- ggplot(data = RKIIncidence) +
+geom_point(aes(x = prcp, y = outOfHomeDuration, color = wave), size = 2.5) +
+theme_minimal() +
+theme(text = element_text(size = 25), legend.position = "bottom", legend.title = element_blank()) +
+theme(axis.ticks.x = element_line(),
+                axis.ticks.y = element_line(),
+                axis.ticks.length = unit(5, "pt")) +
+ylab("outOfHomeDuration") +
+xlab("Prcp [mm]")
+cor_df[nrow(cor_df) + 1, ] <- c("Prcp", cor(RKIIncidence$prcp, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 0)
+cor_df[nrow(cor_df) + 1, ] <- c("Prcp", cor(RKIIncidence$leadPrcp, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 1)
+cor_df[nrow(cor_df) + 1, ] <- c("Prcp", cor(RKIIncidence$leadPrcp2, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 2)
+cor_df[nrow(cor_df) + 1, ] <- c("Prcp", cor(RKIIncidence$leadPrcp3, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 3)
+cor_df[nrow(cor_df) + 1, ] <- c("Prcp", cor(RKIIncidence$leadPrcp4, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 4)
+
+
+PlotCorrelations <- arrangeGrob(pR, pInc, plogInc, pHos, pICU, pD, pTemp, pPrcp, nrow = 4)
+ggsave("CorrelationPlotNat.pdf", PlotCorrelations, dpi = 500, w = 17, h = 18)
+ggsave("CorrelationPlotNat.png", PlotCorrelations, dpi = 500, w = 15, h = 18)
+
+
