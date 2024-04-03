@@ -37,8 +37,10 @@ The goal of this repository is to analyse mobility data collected between 2020 a
 	10. ToDo: Out-of-home duration vs. national ICU cases/100,000
 	11. Out-of-home duration vs. federal Deaths incidence
 	12. Out-of-home duration vs. national Deaths incidence
-	13. ToDo: Out-of-home duration vs. federal Maximum temperature
-	14. ToDo: Out-of-home duration vs. federal Precipitation (in mm)
+	13. Out-of-home duration vs. federal Maximum temperature
+	14. Out-of-home duration vs. federal Precipitation (in mm)
+	15. Out-of-home duration vs. federal school vacations
+	16. Out-of-home duration vs. federal public holidays
 	
 - **FirstAnalysisCounties.R**: Data is considered on a weekly/weekend only/weekday only level. Analysis is conducted until a) 2021-01-01 and b) 2023-01-01. Necessary mobility is read in,  3 plots are produced: 
 	- 1) Absolute out-of-home duration over time, 
