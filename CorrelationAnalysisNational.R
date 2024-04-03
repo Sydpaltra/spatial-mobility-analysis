@@ -99,7 +99,7 @@ colnames(MobilityGermany)[1] <- "Meldedatum"
 RKIIncidence <- left_join(RKIIncidence, MobilityGermany, by = "Meldedatum")
 
 # Reading in + preparing weather data
-Weather <- read_csv("/Users/sydney/git/spatial-mobility-analysis/Data/weatherDataGermany.csv")
+Weather <- read_csv("/Users/sydney/git/spatial-mobility-analysis/Data/weather_weekly_nat.csv")
 colnames(Weather)[1] <- "Meldedatum"
 
 RKIIncidence <- left_join(RKIIncidence, Weather)
@@ -309,5 +309,4 @@ cor_df[nrow(cor_df) + 1, ] <- c("PublicHol", cor(RKIIncidence$leadpubHoliday4, R
 PlotCorrelations <- arrangeGrob(pR, pInc, plogInc, pHos, pICU, pD, pTemp, pPrcp, pSchool, pPub, nrow = 5)
 ggsave("CorrelationPlotNat.pdf", PlotCorrelations, dpi = 500, w = 17, h = 22)
 ggsave("CorrelationPlotNat.png", PlotCorrelations, dpi = 500, w = 17, h = 22)
-
 
