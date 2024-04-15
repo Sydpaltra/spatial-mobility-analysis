@@ -53,6 +53,12 @@ RKIIncidence <- RKIIncidence %>% mutate(leadHospitals = lead(RKIIncidence$`7T_Ho
                                 mutate(leadHospitals3 = lead(RKIIncidence$`7T_Hospitalisierung_Inzidenz`, 3)) %>%
                                 mutate(leadHospitals4 = lead(RKIIncidence$`7T_Hospitalisierung_Inzidenz`, 4))
 
+RKIIncidence <- RKIIncidence %>% mutate(logHos = log10(`7T_Hospitalisierung_Inzidenz`)) %>%
+                                mutate(logHoslead = log10(leadHospitals)) %>%
+                                mutate(logHoslead2 = log10(leadHospitals2)) %>%
+                                mutate(logHoslead3 = log10(leadHospitals3)) %>%
+                                mutate(logHoslead4 = log10(leadHospitals4))
+
 # Reading in + prepating ICU data
 RKIICU <- read_csv("https://raw.githubusercontent.com/robert-koch-institut/Intensivkapazitaeten_und_COVID-19-Intensivbettenbelegung_in_Deutschland/main/Intensivregister_Deutschland_Kapazitaeten.csv")
 RKIICU <- RKIICU %>% filter(behandlungsgruppe == "Erwachsene") %>% 
@@ -68,6 +74,12 @@ RKIIncidence <- RKIIncidence %>% mutate(leadICU= lead(RKIIncidence$ICUIncidence)
                                 mutate(leadICU2 = lead(RKIIncidence$ICUIncidence, 2)) %>%
                                 mutate(leadICU3 = lead(RKIIncidence$ICUIncidence, 3)) %>%
                                 mutate(leadICU4 = lead(RKIIncidence$ICUIncidence, 4))
+
+RKIIncidence <- RKIIncidence %>% mutate(logICU = log10(ICUIncidence)) %>%
+                                mutate(logICUlead = log10(leadICU)) %>%
+                                mutate(logICUlead2 = log10(leadICU2)) %>%
+                                mutate(logICUlead3 = log10(leadICU3)) %>%
+                                mutate(logICUlead4 = log10(leadICU4))
 
 # Reading in + preparing data on deaths
 RKIDeaths <- read_csv("https://raw.githubusercontent.com/robert-koch-institut/COVID-19-Todesfaelle_in_Deutschland/main/COVID-19-Todesfaelle_Deutschland.csv")
@@ -88,6 +100,12 @@ RKIIncidence <- RKIIncidence %>% mutate(leadDeaths = lead(DeathsIncidence)) %>%
                                 mutate(leadDeaths3 = lead(DeathsIncidence, 3)) %>%
                                 mutate(leadDeaths4 = lead(DeathsIncidence, 4))
 
+RKIIncidence <- RKIIncidence %>% mutate(logDeaths = log10(DeathsIncidence)) %>%
+                                mutate(logDeathslead = log10(leadDeaths)) %>%
+                                mutate(logDeathslead2 = log10(leadDeaths2)) %>%
+                                mutate(logDeathslead3 = log10(leadDeaths3)) %>%
+                                mutate(logDeathslead4 = log10(leadDeaths4))
+
 # Reading in + preparing mobility data
 MobilityGermany <- read_delim("https://svn.vsp.tu-berlin.de/repos/public-svn/matsim/scenarios/countries/de/episim/mobilityData/bundeslaender/mobilityData_OverviewBL_weekly.csv", delim = ";")
 MobilityGermany$date <- as.character(MobilityGermany$date)
@@ -99,7 +117,7 @@ colnames(MobilityGermany)[1] <- "Meldedatum"
 RKIIncidence <- left_join(RKIIncidence, MobilityGermany, by = "Meldedatum")
 
 # Reading in + preparing weather data
-Weather <- read_csv("/Users/sydney/git/spatial-mobility-analysis/Data/weather_weekly_nat.csv")
+Weather <- read_csv("/Users/sydney/git/spatial-mobility-analysis/Data/weather/weather_weekly_nat.csv")
 colnames(Weather)[1] <- "Meldedatum"
 
 RKIIncidence <- left_join(RKIIncidence, Weather)
@@ -129,6 +147,9 @@ RKIIncidence <- RKIIncidence %>% mutate(leadSchoolVac = lead(schoolVacation)) %>
                                 mutate(leadSchoolVac3 = lead(schoolVacation, 3)) %>%
                                 mutate(leadSchoolVac4 = lead(schoolVacation, 4))
 
+
+
+
 # Reading in + preparing public holiday
 PublicHol <- read_csv("/Users/sydney/git/spatial-mobility-analysis/data/public_holiday/public_holidays_weekly_nat.csv")
 colnames(PublicHol)[1] <- "Meldedatum"
@@ -152,6 +173,9 @@ xlab("Approximation of R_eff")
 
 cor_df <- data.frame(matrix(nrow = 0, ncol = 3))
 colnames(cor_df) <- c("Variable", "Correlation", "Lead")
+#Correlations only for first wave
+#RKIIncidence <- RKIIncidence %>% filter(wave == "winter 20/21")
+
 cor_df[nrow(cor_df) + 1, ] <- c("R", cor(RKIIncidence$approxR, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 0)
 cor_df[nrow(cor_df) + 1, ] <- c("R", cor(RKIIncidence$leadR, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 1)
 cor_df[nrow(cor_df) + 1, ] <- c("R", cor(RKIIncidence$leadR2, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 2)
@@ -190,7 +214,6 @@ cor_df[nrow(cor_df) + 1, ] <- c("logIncidence", cor(RKIIncidence$logInclead2, RK
 cor_df[nrow(cor_df) + 1, ] <- c("logIncidence", cor(RKIIncidence$logInclead3, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 3)
 cor_df[nrow(cor_df) + 1, ] <- c("logIncidence", cor(RKIIncidence$logInclead4, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 4)
 
-
 # Out Of Home Duration vs Hospital incidence
 pHos <- ggplot(data = RKIIncidence) +
 geom_point(aes(x = `7T_Hospitalisierung_Inzidenz`, y = outOfHomeDuration, colour = wave), size = 2.5) +
@@ -207,7 +230,24 @@ cor_df[nrow(cor_df) + 1, ] <- c("HospitalIncidence", cor(RKIIncidence$leadHospit
 cor_df[nrow(cor_df) + 1, ] <- c("HospitalIncidence", cor(RKIIncidence$leadHospitals3, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 3)
 cor_df[nrow(cor_df) + 1, ] <- c("HospitalIncidence", cor(RKIIncidence$leadHospitals4, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 4)
 
-# Out Of Home Duration vs Hospital incidence
+# Out Of Home Duration vs log(Hospital incidence)
+plogHos <- ggplot(data = RKIIncidence) +
+geom_point(aes(x = logHos, y = outOfHomeDuration, colour = wave), size = 2.5) +
+theme_minimal() +
+theme(text = element_text(size = 25), legend.position = "bottom", legend.title = element_blank()) +
+theme(axis.ticks.x = element_line(),
+                axis.ticks.y = element_line(),
+                axis.ticks.length = unit(5, "pt")) +
+ylab("outOfHomeDuration") +
+xlab("log(Hospitalization Incidence)")
+cor_df[nrow(cor_df) + 1, ] <- c("logHospitalIncidence", cor(RKIIncidence$logHos, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 0)
+cor_df[nrow(cor_df) + 1, ] <- c("logHospitalIncidence", cor(RKIIncidence$logHoslead, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 1)
+cor_df[nrow(cor_df) + 1, ] <- c("logHospitalIncidence", cor(RKIIncidence$logHoslead2, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 2)
+cor_df[nrow(cor_df) + 1, ] <- c("logHospitalIncidence", cor(RKIIncidence$logHoslead3, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 3)
+cor_df[nrow(cor_df) + 1, ] <- c("logHospitalIncidence", cor(RKIIncidence$logHoslead4, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 4)
+
+
+# Out Of Home Duration vs ICU Belegung
 pICU <- ggplot(data = RKIIncidence) +
 geom_point(aes(x = ICUIncidence, y = outOfHomeDuration, colour = wave), size = 2.5) +
 theme_minimal() +
@@ -224,6 +264,22 @@ cor_df[nrow(cor_df) + 1, ] <- c("ICUIncidence", cor(RKIIncidence$leadICU2, RKIIn
 cor_df[nrow(cor_df) + 1, ] <- c("ICUIncidence", cor(RKIIncidence$leadICU3, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 3)
 cor_df[nrow(cor_df) + 1, ] <- c("ICUIncidence", cor(RKIIncidence$leadICU4, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 4)
 
+# Out Of Home Duration vs log(ICU Belegung)
+plogICU <- ggplot(data = RKIIncidence) +
+geom_point(aes(x = logICU, y = outOfHomeDuration, colour = wave), size = 2.5) +
+theme_minimal() +
+theme(text = element_text(size = 25), legend.position = "bottom", legend.title = element_blank()) +
+theme(axis.ticks.x = element_line(),
+                axis.ticks.y = element_line(),
+                axis.ticks.length = unit(5, "pt")) +
+#labs(caption="Careful: ICU is given in cases/100,000 NOT in new(!) cases/100,000") +
+ylab("outOfHomeDuration") +
+xlab("log(ICU Belegung(!)/100.000)")
+cor_df[nrow(cor_df) + 1, ] <- c("logICUIncidence", cor(RKIIncidence$logICU, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 0)
+cor_df[nrow(cor_df) + 1, ] <- c("logICUIncidence", cor(RKIIncidence$logICUlead, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 1)
+cor_df[nrow(cor_df) + 1, ] <- c("logICUIncidence", cor(RKIIncidence$logICUlead2, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 2)
+cor_df[nrow(cor_df) + 1, ] <- c("logICUIncidence", cor(RKIIncidence$logICUlead3, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 3)
+cor_df[nrow(cor_df) + 1, ] <- c("logICUIncidence", cor(RKIIncidence$logICUlead4, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 4)
 
 # Out Of Home Duration vs Death incidence
 pD <- ggplot(data = RKIIncidence) +
@@ -238,8 +294,25 @@ xlab("Deaths Incidence")
 cor_df[nrow(cor_df) + 1, ] <-c("DeathIncidence", cor(RKIIncidence$DeathsIncidence, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 0)
 cor_df[nrow(cor_df) + 1, ] <- c("DeathIncidence", cor(RKIIncidence$leadDeaths, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 1)
 cor_df[nrow(cor_df) + 1, ] <- c("DeathIncidence", cor(RKIIncidence$leadDeaths2, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 2)
-cor_df[nrow(cor_df) + 1, ] <- c("DeathIncidence", cor(RKIIncidence$leadDeaths3, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 3)
+cor_df[nrow(cor_df) + 1, ] <- c("logDeathIncidence", cor(RKIIncidence$leadDeaths3, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 3)
 cor_df[nrow(cor_df) + 1, ] <- c("DeathIncidence", cor(RKIIncidence$leadDeaths4, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 4)
+
+
+# Out Of Home Duration vs log(Death incidence)
+plogD <- ggplot(data = RKIIncidence) +
+geom_point(aes(x = logDeaths, y = outOfHomeDuration, colour = wave), size = 2.5) +
+theme_minimal() +
+theme(text = element_text(size = 25), legend.position = "bottom", legend.title = element_blank()) +
+theme(axis.ticks.x = element_line(),
+                axis.ticks.y = element_line(),
+                axis.ticks.length = unit(5, "pt")) +
+ylab("outOfHomeDuration") +
+xlab("Deaths Incidence")
+cor_df[nrow(cor_df) + 1, ] <-c("logDeathIncidence", cor(RKIIncidence$logDeaths, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 0)
+cor_df[nrow(cor_df) + 1, ] <- c("logDeathIncidence", cor(RKIIncidence$logDeathslead, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 1)
+cor_df[nrow(cor_df) + 1, ] <- c("logDeathIncidence", cor(RKIIncidence$logDeathslead2, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 2)
+cor_df[nrow(cor_df) + 1, ] <- c("logDeathIncidence", cor(RKIIncidence$logDeathslead3, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 3)
+cor_df[nrow(cor_df) + 1, ] <- c("logDeathIncidence", cor(RKIIncidence$logDeathslead4, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 4)
 
 # Out Of Home Duration vs maximum Temp
 pTemp <- ggplot(data = RKIIncidence) +
@@ -306,7 +379,13 @@ cor_df[nrow(cor_df) + 1, ] <- c("PublicHol", cor(RKIIncidence$leadpubHoliday3, R
 cor_df[nrow(cor_df) + 1, ] <- c("PublicHol", cor(RKIIncidence$leadpubHoliday4, RKIIncidence$outOfHomeDuration, "pairwise.complete.obs"), 4)
 
 
-PlotCorrelations <- arrangeGrob(pR, pInc, plogInc, pHos, pICU, pD, pTemp, pPrcp, pSchool, pPub, nrow = 5)
-ggsave("CorrelationPlotNat.pdf", PlotCorrelations, dpi = 500, w = 17, h = 22)
-ggsave("CorrelationPlotNat.png", PlotCorrelations, dpi = 500, w = 17, h = 22)
+PlotCorrelations <- arrangeGrob(pR, pInc, plogInc, pHos, plogHos, pICU, plogICU, pD, plogD, pTemp, pPrcp, pSchool, pPub, nrow = 5)
+ggsave("CorrelationPlotNat.pdf", PlotCorrelations, dpi = 500, w = 23, h = 24)
+ggsave("CorrelationPlotNat.png", PlotCorrelations, dpi = 500, w = 23, h = 24)
+
+
+write_csv(cor_df, "CorrelationDFNatSecondWave.csv")
+
+
+
 
