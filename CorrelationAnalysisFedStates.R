@@ -52,6 +52,13 @@ RKIIncidenceNational <- RKIIncidenceNational %>% mutate(leadHospitals = lead(RKI
                                 mutate(leadHospitals3 = lead(RKIIncidenceNational$`7T_Hospitalisierung_Inzidenz`, 3)) %>%
                                 mutate(leadHospitals4 = lead(RKIIncidenceNational$`7T_Hospitalisierung_Inzidenz`, 4))
 
+RKIIncidenceNational <- RKIIncidenceNational %>% mutate(logHospitals = log10(`7T_Hospitalisierung_Inzidenz`)) %>%
+                                mutate(leadlogHospitals = log10(leadHospitals)) %>%
+                                mutate(leadlogHospitals2 = log10(leadHospitals2)) %>%
+                                mutate(leadlogHospitals3 = log10(leadHospitals3)) %>%
+                                mutate(leadlogHospitals4 = log10(leadHospitals4))
+
+
 # Reading in + preparing data on deaths on national level
 RKIDeaths <- read_csv("https://raw.githubusercontent.com/robert-koch-institut/COVID-19-Todesfaelle_in_Deutschland/main/COVID-19-Todesfaelle_Deutschland.csv")
 RKIDeaths <- RKIDeaths %>% filter(Berichtsdatum < "2023-01-01") %>%
@@ -70,6 +77,12 @@ RKIIncidenceNational <- RKIIncidenceNational %>% mutate(leadDeaths = lead(Deaths
                                 mutate(leadDeaths2 = lead(DeathsIncidence, 2)) %>%
                                 mutate(leadDeaths3 = lead(DeathsIncidence, 3)) %>%
                                 mutate(leadDeaths4 = lead(DeathsIncidence, 4))
+
+RKIIncidenceNational <- RKIIncidenceNational %>% mutate(logDeaths = log10(DeathsIncidence)) %>%
+                                mutate(leadlogDeaths = log10(leadDeaths)) %>%
+                                mutate(leadlogDeaths2 = log10(leadDeaths2)) %>%
+                                mutate(leadlogDeaths3 = log10(leadDeaths3)) %>%
+                                mutate(leadlogDeaths4 = log10(leadDeaths4))
 
 # Reading in + preparing incidence data on fed state level
 FedStates <- c("Schleswig-Holstein", "Hamburg", "Niedersachsen", "Bremen", "Nordrhein-Westfalen", "Hessen", "Rheinland-Pfalz", "Baden-Württemberg",
@@ -148,6 +161,12 @@ for(fedState in FedStates){
                                         mutate(leadHospitalFed3 = lead(RKIIncidenceFedState$`7T_Hospitalisierung_Inzidenz`, 3)) %>%
                                         mutate(leadHospitalFed4 = lead(RKIIncidenceFedState$`7T_Hospitalisierung_Inzidenz`, 4))
 
+        RKIIncidenceFedState <- RKIIncidenceFedState %>% mutate(logHospitalFed = log10(`7T_Hospitalisierung_Inzidenz`)) %>%
+                                        mutate(leadlogHospitalFed = log10(leadHospitalFed)) %>%
+                                        mutate(leadlogHospitalFed2 = log10(leadHospitalFed2)) %>%
+                                        mutate(leadlogHospitalFed3 = log10(leadHospitalFed3)) %>%
+                                        mutate(leadlogHospitalFed4 = log10(leadHospitalFed4))
+
         colnames(RKIIncidenceFedState)[27] <- "HospitalFed"
 
         # Reading in + preparing data on deaths on fed state level
@@ -173,6 +192,12 @@ for(fedState in FedStates){
                                         mutate(leadDeathFed2 = lead(DeathsIncidenceFed, 2)) %>%
                                         mutate(leadDeathFed3 = lead(DeathsIncidenceFed, 3)) %>%
                                         mutate(leadDeathFed4 = lead(DeathsIncidenceFed, 4))
+
+        RKIIncidenceFedState <- RKIIncidenceFedState %>% mutate(logDeathFed = log10(DeathsIncidenceFed)) %>%
+                                        mutate(leadlogDeathFed = log10(leadDeathFed)) %>%
+                                        mutate(leadlogDeathFed2 = log10(leadDeathFed2)) %>%
+                                        mutate(leadlogDeathFed3 = log10(leadDeathFed3)) %>%
+                                        mutate(leadlogDeathFed4 = log10(leadDeathFed4))
 
         # Reading in + preparing mobility data
         MobilityGermany <- read_delim("https://svn.vsp.tu-berlin.de/repos/public-svn/matsim/scenarios/countries/de/episim/mobilityData/bundeslaender/mobilityData_OverviewBL_weekly.csv", delim = ";")
@@ -242,10 +267,10 @@ for(fedState in FedStates){
                                                                 Meldedatum < "2020-09-20" ~ "Summer break",
                                                                 .default = "winter 20/21"))
 
-
+        # RKIIncidenceFedState <- RKIIncidenceFedState %>% filter(wave == "winter 20/21")
         # Out Of Home Duration vs approximation of R-value (on fed level)
         pRFed <- ggplot(data = RKIIncidenceFedState) +
-        geom_point(aes(x = leadRFed4, y = outOfHomeDuration, color = wave), size = 2.5) +
+        geom_point(aes(x = approxRFed, y = outOfHomeDuration, color = wave), size = 2.5) +
         theme_minimal() +
         theme(text = element_text(size = 25), legend.position = "bottom", legend.title = element_blank()) +
         theme(axis.ticks.x = element_line(),
@@ -261,7 +286,7 @@ for(fedState in FedStates){
 
         # Out Of Home Duration vs approximation of R-value (on nat level)
         pRNat <- ggplot(data = RKIIncidenceFedState) +
-        geom_point(aes(x = leadR4, y = outOfHomeDuration, color = wave), size = 2.5) +
+        geom_point(aes(x = approxR, y = outOfHomeDuration, color = wave), size = 2.5) +
         theme_minimal() +
         theme(text = element_text(size = 25), legend.position = "bottom", legend.title = element_blank()) +
         theme(axis.ticks.x = element_line(),
@@ -277,7 +302,7 @@ for(fedState in FedStates){
 
         # Out Of Home Duration vs Incidence (fed)
         pIncFed <- ggplot(data = RKIIncidenceFedState %>% filter(Meldedatum > "2020-03-15")) +
-        geom_point(aes(x = leadIncidenceFed4, y = outOfHomeDuration, color = wave), size = 2.5) +
+        geom_point(aes(x = IncidenceFed, y = outOfHomeDuration, color = wave), size = 2.5) +
         theme_minimal() +
         theme(text = element_text(size = 25), legend.position = "bottom", legend.title = element_blank()) +
         theme(axis.ticks.x = element_line(),
@@ -293,7 +318,7 @@ for(fedState in FedStates){
 
         # Out Of Home Duration vs Incidence (nat)
         pIncNat <- ggplot(data = RKIIncidenceFedState %>% filter(Meldedatum > "2020-03-15")) +
-        geom_point(aes(x = leadIncidence4, y = outOfHomeDuration, color = wave), size = 2.5) +
+        geom_point(aes(x = `Inzidenz_7-Tage`, y = outOfHomeDuration, color = wave), size = 2.5) +
         theme_minimal() +
         theme(text = element_text(size = 25), legend.position = "bottom", legend.title = element_blank()) +
         theme(axis.ticks.x = element_line(),
@@ -309,7 +334,7 @@ for(fedState in FedStates){
 
         # Out Of Home Duration vs log(Incidence) (fed)
         plogIncFed <- ggplot(data = RKIIncidenceFedState %>% filter(Meldedatum > "2020-03-15")) +
-        geom_point(aes(x = leadlogIncidenceFed4, y = outOfHomeDuration, color = wave), size = 2.5) +
+        geom_point(aes(x = logIncidenceFed, y = outOfHomeDuration, color = wave), size = 2.5) +
         theme_minimal() +
         theme(text = element_text(size = 25), legend.position = "bottom", legend.title = element_blank()) +
         theme(axis.ticks.x = element_line(),
@@ -325,7 +350,7 @@ for(fedState in FedStates){
 
         # Out Of Home Duration vs log(Incidence) (nat)
         plogIncNat <- ggplot(data = RKIIncidenceFedState %>% filter(Meldedatum > "2020-03-15")) +
-        geom_point(aes(x = leadlogIncidence4, y = outOfHomeDuration, color = wave), size = 2.5) +
+        geom_point(aes(x = logIncidence, y = outOfHomeDuration, color = wave), size = 2.5) +
         theme_minimal() +
         theme(text = element_text(size = 25), legend.position = "bottom", legend.title = element_blank()) +
         theme(axis.ticks.x = element_line(),
@@ -341,7 +366,7 @@ for(fedState in FedStates){
 
         # Out Of Home Duration vs Hospital incidence (fed)
         pHospFed <- ggplot(data = RKIIncidenceFedState) +
-        geom_point(aes(x = leadHospitalFed4, y = outOfHomeDuration, color = wave), size = 2.5) +
+        geom_point(aes(x = HospitalFed, y = outOfHomeDuration, color = wave), size = 2.5) +
         theme_minimal() +
         theme(text = element_text(size = 25), legend.position = "bottom", legend.title = element_blank()) +
         theme(axis.ticks.x = element_line(),
@@ -355,9 +380,25 @@ for(fedState in FedStates){
         cor_df[nrow(cor_df) + 1, ] <- c("HospitalIncidenceFed", cor(RKIIncidenceFedState$leadHospitalFed3, RKIIncidenceFedState$outOfHomeDuration, "pairwise.complete.obs"), 3, fedState)
         cor_df[nrow(cor_df) + 1, ] <- c("HospitalIncidenceFed", cor(RKIIncidenceFedState$leadHospitalFed4, RKIIncidenceFedState$outOfHomeDuration, "pairwise.complete.obs"), 4, fedState)
 
+        # Out Of Home Duration vs log(Hospital incidence (fed))
+        plogHospFed <- ggplot(data = RKIIncidenceFedState) +
+        geom_point(aes(x = logHospitalFed, y = outOfHomeDuration, color = wave), size = 2.5) +
+        theme_minimal() +
+        theme(text = element_text(size = 25), legend.position = "bottom", legend.title = element_blank()) +
+        theme(axis.ticks.x = element_line(),
+                        axis.ticks.y = element_line(),
+                        axis.ticks.length = unit(5, "pt")) +
+        ylab("outOfHomeDuration") +
+        xlab("log(Hospitalization Incidence (fed))")
+        cor_df[nrow(cor_df) + 1, ] <- c("logHospitalIncidenceFed", cor(RKIIncidenceFedState$logHospitalFed, RKIIncidenceFedState$outOfHomeDuration, "pairwise.complete.obs"), 0, fedState)
+        cor_df[nrow(cor_df) + 1, ] <- c("logHospitalIncidenceFed", cor(RKIIncidenceFedState$leadlogHospitalFed, RKIIncidenceFedState$outOfHomeDuration, "pairwise.complete.obs"), 1, fedState)
+        cor_df[nrow(cor_df) + 1, ] <- c("logHospitalIncidenceFed", cor(RKIIncidenceFedState$leadlogHospitalFed2, RKIIncidenceFedState$outOfHomeDuration, "pairwise.complete.obs"), 2, fedState)
+        cor_df[nrow(cor_df) + 1, ] <- c("logHospitalIncidenceFed", cor(RKIIncidenceFedState$leadlogHospitalFed3, RKIIncidenceFedState$outOfHomeDuration, "pairwise.complete.obs"), 3, fedState)
+        cor_df[nrow(cor_df) + 1, ] <- c("logHospitalIncidenceFed", cor(RKIIncidenceFedState$leadlogHospitalFed4, RKIIncidenceFedState$outOfHomeDuration, "pairwise.complete.obs"), 4, fedState)
+
         # Out Of Home Duration vs Hospital incidence (nat)
         pHospNat <- ggplot(data = RKIIncidenceFedState) +
-        geom_point(aes(x = leadHospitals4, y = outOfHomeDuration, color = wave), size = 2.5) +
+        geom_point(aes(x = `7T_Hospitalisierung_Inzidenz`, y = outOfHomeDuration, color = wave), size = 2.5) +
         theme_minimal() +
         theme(text = element_text(size = 25), legend.position = "bottom", legend.title = element_blank()) +
         theme(axis.ticks.x = element_line(),
@@ -371,9 +412,25 @@ for(fedState in FedStates){
         cor_df[nrow(cor_df) + 1, ] <- c("HospitalIncidenceNat", cor(RKIIncidenceFedState$leadHospitals3, RKIIncidenceFedState$outOfHomeDuration, "pairwise.complete.obs"), 3, fedState)
         cor_df[nrow(cor_df) + 1, ] <- c("HospitalIncidenceNat", cor(RKIIncidenceFedState$leadHospitals4, RKIIncidenceFedState$outOfHomeDuration, "pairwise.complete.obs"), 4, fedState)
 
+        # Out Of Home Duration vs log(Hospital incidence (nat))
+        plogHospNat <- ggplot(data = RKIIncidenceFedState) +
+        geom_point(aes(x = logHospitals, y = outOfHomeDuration, color = wave), size = 2.5) +
+        theme_minimal() +
+        theme(text = element_text(size = 25), legend.position = "bottom", legend.title = element_blank()) +
+        theme(axis.ticks.x = element_line(),
+                        axis.ticks.y = element_line(),
+                        axis.ticks.length = unit(5, "pt")) +
+        ylab("outOfHomeDuration") +
+        xlab("log(Hospitalization Incidence (nat))")
+        cor_df[nrow(cor_df) + 1, ] <- c("logHospitalIncidenceNat", cor(RKIIncidenceFedState$logHospitals, RKIIncidenceFedState$outOfHomeDuration, "pairwise.complete.obs"), 0, fedState)
+        cor_df[nrow(cor_df) + 1, ] <- c("logHospitalIncidenceNat", cor(RKIIncidenceFedState$leadlogHospitals, RKIIncidenceFedState$outOfHomeDuration, "pairwise.complete.obs"), 1, fedState)
+        cor_df[nrow(cor_df) + 1, ] <- c("logHospitalIncidenceNat", cor(RKIIncidenceFedState$leadlogHospitals2, RKIIncidenceFedState$outOfHomeDuration, "pairwise.complete.obs"), 2, fedState)
+        cor_df[nrow(cor_df) + 1, ] <- c("logHospitalIncidenceNat", cor(RKIIncidenceFedState$leadlogHospitals3, RKIIncidenceFedState$outOfHomeDuration, "pairwise.complete.obs"), 3, fedState)
+        cor_df[nrow(cor_df) + 1, ] <- c("logHospitalIncidenceNat", cor(RKIIncidenceFedState$leadlogHospitals4, RKIIncidenceFedState$outOfHomeDuration, "pairwise.complete.obs"), 4, fedState)
+
         # Out Of Home Duration vs Death incidence (fed)
         pDFed <- ggplot(data = RKIIncidenceFedState) +
-        geom_point(aes(x = leadDeathFed4, y = outOfHomeDuration, color = wave), size = 2.5) +
+        geom_point(aes(x = DeathsIncidenceFed, y = outOfHomeDuration, color = wave), size = 2.5) +
         theme_minimal() +
         theme(text = element_text(size = 25), legend.position = "bottom", legend.title = element_blank()) +
         theme(axis.ticks.x = element_line(),
@@ -387,9 +444,25 @@ for(fedState in FedStates){
         cor_df[nrow(cor_df) + 1, ] <- c("DeathIncidenceFed", cor(RKIIncidenceFedState$leadDeathFed3, RKIIncidenceFedState$outOfHomeDuration, "pairwise.complete.obs"), 3, fedState)
         cor_df[nrow(cor_df) + 1, ] <- c("DeathIncidenceFed", cor(RKIIncidenceFedState$leadDeathFed4, RKIIncidenceFedState$outOfHomeDuration, "pairwise.complete.obs"), 4, fedState)
 
+        # Out Of Home Duration vs log(Death incidence (fed))
+        plogDFed <- ggplot(data = RKIIncidenceFedState) +
+        geom_point(aes(x = logDeathFed, y = outOfHomeDuration, color = wave), size = 2.5) +
+        theme_minimal() +
+        theme(text = element_text(size = 25), legend.position = "bottom", legend.title = element_blank()) +
+        theme(axis.ticks.x = element_line(),
+                        axis.ticks.y = element_line(),
+                        axis.ticks.length = unit(5, "pt")) +
+        ylab("outOfHomeDuration") +
+        xlab("log(Deaths Incidence (fed))")
+        cor_df[nrow(cor_df) + 1, ] <- c("logDeathIncidenceFed", cor(RKIIncidenceFedState$logDeathFed, RKIIncidenceFedState$outOfHomeDuration, "pairwise.complete.obs"), 0, fedState)
+        cor_df[nrow(cor_df) + 1, ] <- c("logDeathIncidenceFed", cor(RKIIncidenceFedState$leadlogDeathFed, RKIIncidenceFedState$outOfHomeDuration, "pairwise.complete.obs"), 1, fedState)
+        cor_df[nrow(cor_df) + 1, ] <- c("logDeathIncidenceFed", cor(RKIIncidenceFedState$leadlogDeathFed2, RKIIncidenceFedState$outOfHomeDuration, "pairwise.complete.obs"), 2, fedState)
+        cor_df[nrow(cor_df) + 1, ] <- c("logDeathIncidenceFed", cor(RKIIncidenceFedState$leadlogDeathFed3, RKIIncidenceFedState$outOfHomeDuration, "pairwise.complete.obs"), 3, fedState)
+        cor_df[nrow(cor_df) + 1, ] <- c("logDeathIncidenceFed", cor(RKIIncidenceFedState$leadlogDeathFed4, RKIIncidenceFedState$outOfHomeDuration, "pairwise.complete.obs"), 4, fedState)
+
         # Out Of Home Duration vs Death incidence (nat)
         pDNat <- ggplot(data = RKIIncidenceFedState) +
-        geom_point(aes(x = leadDeaths4, y = outOfHomeDuration, color = wave), size = 2.5) +
+        geom_point(aes(x = DeathsIncidence, y = outOfHomeDuration, color = wave), size = 2.5) +
         theme_minimal() +
         theme(text = element_text(size = 25), legend.position = "bottom", legend.title = element_blank()) +
         theme(axis.ticks.x = element_line(),
@@ -403,9 +476,24 @@ for(fedState in FedStates){
         cor_df[nrow(cor_df) + 1, ] <- c("DeathIncidenceNat", cor(RKIIncidenceFedState$leadDeaths3, RKIIncidenceFedState$outOfHomeDuration, "pairwise.complete.obs"), 3, fedState)
         cor_df[nrow(cor_df) + 1, ] <- c("DeathIncidenceNat", cor(RKIIncidenceFedState$leadDeaths4, RKIIncidenceFedState$outOfHomeDuration, "pairwise.complete.obs"), 4, fedState)
 
+        plogDNat <- ggplot(data = RKIIncidenceFedState) +
+        geom_point(aes(x = logDeaths, y = outOfHomeDuration, color = wave), size = 2.5) +
+        theme_minimal() +
+        theme(text = element_text(size = 25), legend.position = "bottom", legend.title = element_blank()) +
+        theme(axis.ticks.x = element_line(),
+                        axis.ticks.y = element_line(),
+                        axis.ticks.length = unit(5, "pt")) +
+        ylab("outOfHomeDuration") +
+        xlab("log(Deaths Incidence (nat))")
+        cor_df[nrow(cor_df) + 1, ] <- c("logDeathIncidenceNat", cor(RKIIncidenceFedState$logDeaths, RKIIncidenceFedState$outOfHomeDuration, "pairwise.complete.obs"), 0, fedState)
+        cor_df[nrow(cor_df) + 1, ] <- c("logDeathIncidenceNat", cor(RKIIncidenceFedState$leadlogDeaths, RKIIncidenceFedState$outOfHomeDuration, "pairwise.complete.obs"), 1, fedState)
+        cor_df[nrow(cor_df) + 1, ] <- c("logDeathIncidenceNat", cor(RKIIncidenceFedState$leadlogDeaths2, RKIIncidenceFedState$outOfHomeDuration, "pairwise.complete.obs"), 2, fedState)
+        cor_df[nrow(cor_df) + 1, ] <- c("logDeathIncidenceNat", cor(RKIIncidenceFedState$leadlogDeaths3, RKIIncidenceFedState$outOfHomeDuration, "pairwise.complete.obs"), 3, fedState)
+        cor_df[nrow(cor_df) + 1, ] <- c("logDeathIncidenceNat", cor(RKIIncidenceFedState$leadlogDeaths4, RKIIncidenceFedState$outOfHomeDuration, "pairwise.complete.obs"), 4, fedState)
+
         # Out Of Home Duration vs maximum Temp
         pTemp <- ggplot(data = RKIIncidenceFedState) +
-        geom_point(aes(x = leadTmax4, y = outOfHomeDuration, color = wave), size = 2.5) +
+        geom_point(aes(x = tmax, y = outOfHomeDuration, color = wave), size = 2.5) +
         theme_minimal() +
         theme(text = element_text(size = 25), legend.position = "bottom") +
         theme(axis.ticks.x = element_line(),
@@ -421,7 +509,7 @@ for(fedState in FedStates){
 
         # Out Of Home Duration vs prcp
         pPrcp <- ggplot(data = RKIIncidenceFedState) +
-        geom_point(aes(x = leadPrcp4, y = outOfHomeDuration, color = wave), size = 2.5) +
+        geom_point(aes(x = prcp, y = outOfHomeDuration, color = wave), size = 2.5) +
         theme_minimal() +
         theme(text = element_text(size = 25), legend.position = "bottom") +
         theme(axis.ticks.x = element_line(),
@@ -438,7 +526,7 @@ for(fedState in FedStates){
 
         # Out-of-home duration vs. School vacation
         pSchool <- ggplot(data = RKIIncidenceFedState) +
-        geom_point(aes(x = leadSchoolVac4, y = outOfHomeDuration, color = wave), size = 2.5) +
+        geom_point(aes(x = schoolVacation, y = outOfHomeDuration, color = wave), size = 2.5) +
         theme_minimal() +
         theme(text = element_text(size = 25), legend.position = "bottom", legend.title = element_blank()) +
         theme(axis.ticks.x = element_line(),
@@ -454,7 +542,7 @@ for(fedState in FedStates){
 
         # Out-of-home duration vs. public holidays
         pPub <- ggplot(data = RKIIncidenceFedState) +
-        geom_point(aes(x = leadpubHoliday4, y = outOfHomeDuration, color = wave), size = 2.5) +
+        geom_point(aes(x = pubHoliday, y = outOfHomeDuration, color = wave), size = 2.5) +
         theme_minimal() +
         theme(text = element_text(size = 25), legend.position = "bottom", legend.title = element_blank()) +
         theme(axis.ticks.x = element_line(),
@@ -469,9 +557,13 @@ for(fedState in FedStates){
         cor_df[nrow(cor_df) + 1, ] <- c("PublicHol", cor(RKIIncidenceFedState$leadpubHoliday4, RKIIncidenceFedState$outOfHomeDuration, "pairwise.complete.obs"), 4, fedState)
 
 
-        PlotCorrelations <- arrangeGrob(pRFed, pRNat, pIncFed, pIncNat, plogIncFed, plogIncNat, pHospFed, pHospNat, pDFed, pDNat, pTemp, pPrcp, pSchool, pPub, nrow = 7)
-# ggsave(paste0("CorrelationPlot", as.character(fedState), "4weeklead.pdf"), PlotCorrelations, dpi = 500, w = 18, h = 31)
-      #  ggsave(paste0("CorrelationPlot" , as.character(fedState), "4weeklead.png"), PlotCorrelations, dpi = 500, w = 18, h = 31)
+        PlotCorrelations <- arrangeGrob(pRFed, pRNat, 
+        pIncFed, pIncNat, plogIncFed, plogIncNat,
+        pHospFed, pHospNat, plogHospFed, plogHospNat,
+        pDFed, pDNat, plogDFed, plogDNat,
+        pTemp, pPrcp, pSchool, pPub, nrow = 5)
+#    ggsave(paste0("CorrelationPlot", as.character(fedState), ".pdf"), PlotCorrelations, dpi = 500, w = 39, h = 33)
+#    ggsave(paste0("CorrelationPlot" , as.character(fedState), ".png"), PlotCorrelations, dpi = 500, w = 39, h = 33)
 }
 
 cor_df$Correlation <- as.double(cor_df$Correlation)
